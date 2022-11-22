@@ -751,7 +751,10 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
             }
             if(screenCapturer == null) {
                 Log.d("RNTwilioScreenShare", "Under screenCapturer null & enables true");
-                requestScreenCapturePermission();
+                MediaProjectionManager mediaProjectionManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+
+                // This initiates a prompt dialog for the user to confirm screen projection.
+                startActivityForResult(mediaProjectionManager.createScreenCaptureIntent(), REQUEST_MEDIA_PROJECTION);
             } else {
                 Log.d("RNTwilioScreenShare", "Under screenCapturer true & enables true");
                 startScreenCapture();
@@ -765,15 +768,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
         }
     }
 
-    private void requestScreenCapturePermission() {
-        Log.d(TAG, "Requesting permission to capture screen");
-        MediaProjectionManager mediaProjectionManager = (MediaProjectionManager) getContext().getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-
-        // This initiates a prompt dialog for the user to confirm screen projection.
-        startActivityForResult(mediaProjectionManager.createScreenCaptureIntent(), REQUEST_MEDIA_PROJECTION);
-    }
-
-    // @Override
+    @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_MEDIA_PROJECTION) {
             if (resultCode != AppCompatActivity.RESULT_OK) {
