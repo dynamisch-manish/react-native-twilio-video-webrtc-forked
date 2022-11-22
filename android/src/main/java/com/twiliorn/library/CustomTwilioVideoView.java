@@ -733,8 +733,6 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     }
 
     public void toggleScreenShare(boolean enabled) {
-        isScreenShareEnabled = enabled;
-
         if (screenCapturer == null && enabled) {
             Log.d("RNTwilioScreenShare", "Under screen share");
             requestScreenCapturePermission();
@@ -782,6 +780,8 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     }
 
     private void startScreenCapture() {
+        isScreenShareEnabled = true;
+
         localVideoTrack = LocalVideoTrack.create(getContext(), true, screenCapturer, buildVideoFormat());
         if (thumbnailVideoView != null && localVideoTrack != null) {
             localVideoTrack.addSink(thumbnailVideoView);
@@ -798,6 +798,8 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     }
 
     private void stopScreenCapture() {
+        isScreenShareEnabled = false;
+
         if (localVideoTrack != null) {
             localVideoTrack.enable(false);
             publishLocalVideo(false);
