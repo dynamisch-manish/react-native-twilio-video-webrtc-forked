@@ -769,7 +769,6 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
         }
     }
 
-    @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_MEDIA_PROJECTION) {
             if (resultCode != AppCompatActivity.RESULT_OK) {
