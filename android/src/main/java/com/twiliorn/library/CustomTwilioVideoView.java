@@ -31,6 +31,7 @@ import android.os.HandlerThread;
 import android.util.Log;
 import android.view.View;
 
+import com.facebook.react.bridge.BaseActivityEventListener;
 import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
