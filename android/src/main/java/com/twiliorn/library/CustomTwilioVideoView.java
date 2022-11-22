@@ -211,6 +211,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     private ScreenCapturerManager screenCapturerManager;
     private LocalAudioTrack localAudioTrack;
     private AudioManager audioManager;
+    private MediaProjectionManager mediaProjectionManager;
     private int previousAudioMode;
     private boolean disconnectedFromOnDestroy;
     private IntentFilter intentFilter;
@@ -239,6 +240,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
          * Needed for setting/abandoning audio focus during call
          */
         audioManager = (AudioManager) themedReactContext.getSystemService(Context.AUDIO_SERVICE);
+        mediaProjectionManager = (MediaProjectionManager) themedReactContext.getSystemService(Context.MEDIA_PROJECTION_SERVICE);
         myNoisyAudioStreamReceiver = new BecomingNoisyReceiver();
         intentFilter = new IntentFilter(Intent.ACTION_HEADSET_PLUG);
 
@@ -751,8 +753,6 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
             }
             if(screenCapturer == null) {
                 Log.d("RNTwilioScreenShare", "Under screenCapturer null & enables true");
-                MediaProjectionManager mediaProjectionManager = (MediaProjectionManager) themedReactContext.getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-
                 // This initiates a prompt dialog for the user to confirm screen projection.
                 startActivityForResult(mediaProjectionManager.createScreenCaptureIntent(), REQUEST_MEDIA_PROJECTION);
             } else {
