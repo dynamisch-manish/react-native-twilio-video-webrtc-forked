@@ -12,6 +12,7 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
+import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -29,13 +30,13 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
 import android.view.View;
-import android.support.v7.app.AppCompatActivity;
 
 import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.WritableNativeArray;
 import com.facebook.react.bridge.WritableNativeMap;
+import com.facebook.react.bridge.UiThreadUtil;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.events.RCTEventEmitter;
 import com.twilio.video.AudioTrackPublication;
@@ -211,6 +212,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     private ScreenCapturerManager screenCapturerManager;
     private LocalAudioTrack localAudioTrack;
     private AudioManager audioManager;
+    private MediaProjectionManager mediaProjectionManager;
     private int previousAudioMode;
     private boolean disconnectedFromOnDestroy;
     private IntentFilter intentFilter;
@@ -250,9 +252,39 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
         dataTrackMessageThread.start();
         dataTrackMessageThreadHandler = new Handler(dataTrackMessageThread.getLooper());
 
+        Activity currentActivity = context.getCurrentActivity();
+
+        mediaProjectionManager = (MediaProjectionManager) currentActivity.getApplication().getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+
         if (android.os.Build.VERSION.SDK_INT >= 29) {
             screenCapturerManager = new ScreenCapturerManager(getContext());
         }
+
+        context.addActivityEventListener(new BaseActivityEventListener() {
+            @Override
+            public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent data) {
+                super.onActivityResult(activity, requestCode, resultCode, data);
+                if (requestCode == REQUEST_MEDIA_PROJECTION) {
+                    if (resultCode != Activity.RESULT_OK) {
+                        Log.d(TAG, "Screen capture permission not granted");
+                        return;
+                    }
+                    screenCapturer = new ScreenCapturer(context, resultCode, data, new ScreenCapturer.Listener() {
+                        @Override
+                        public void onFirstFrameAvailable() {
+                            Log.d(TAG, "First frame from screen capturer available");
+                        }
+                        
+                        @Override
+                        public void onScreenCaptureError(String errorDescription) {
+                            Log.e(TAG, "Screen capturer error: " + errorDescription);
+                            stopScreenCapture();
+                        }
+                    });
+                    startScreenCapture();
+                }
+            }
+        });
     }
 
     // ===== SETUP =================================================================================
@@ -751,9 +783,21 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
             }
             if(screenCapturer == null) {
                 Log.d("RNTwilioScreenShare", "Under screenCapturer null & enables true");
-                MediaProjectionManager mediaProjectionManager = (MediaProjectionManager) themedReactContext.getCurrentActivity().getApplication().getSystemService(Context.MEDIA_PROJECTION_SERVICE);
                 // This initiates a prompt dialog for the user to confirm screen projection.
-                startActivityForResult(mediaProjectionManager.createScreenCaptureIntent(), REQUEST_MEDIA_PROJECTION);
+
+                if (mediaProjectionManager != null) {
+                    Activity currentActivity = this.themedReactContext.getCurrentActivity();
+
+                    UiThreadUtil.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            currentActivity.startActivityForResult(
+                                mediaProjectionManager.createScreenCaptureIntent(), REQUEST_MEDIA_PROJECTION);
+                        }
+                    });        
+                } else {
+                    Log.d("RNTwilioScreenShare", "mediaProjectionManager is null");
+                }
             } else {
                 Log.d("RNTwilioScreenShare", "Under screenCapturer true & enables true");
                 startScreenCapture();
@@ -764,28 +808,6 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
                 screenCapturerManager.endForeground();
             }
             stopScreenCapture();
-        }
-    }
-
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_MEDIA_PROJECTION) {
-            if (resultCode != AppCompatActivity.RESULT_OK) {
-                Log.d(TAG, "Screen capture permission not granted");
-                return;
-            }
-            screenCapturer = new ScreenCapturer(getContext(), resultCode, data, new ScreenCapturer.Listener() {
-                @Override
-                public void onFirstFrameAvailable() {
-                    Log.d(TAG, "First frame from screen capturer available");
-                }
-                
-                @Override
-                public void onScreenCaptureError(String errorDescription) {
-                    Log.e(TAG, "Screen capturer error: " + errorDescription);
-                    stopScreenCapture();
-                }
-            });
-            startScreenCapture();
         }
     }
 

@@ -60,6 +60,7 @@ public class CustomTwilioVideoViewManager extends SimpleViewManager<CustomTwilio
     private static final int SEND_STRING = 12;
     private static final int PUBLISH_VIDEO = 13;
     private static final int PUBLISH_AUDIO = 14;
+    private static final int TOGGLE_SCREEN_SHARE = 15;
 
     @Override
     public String getName() {
@@ -108,6 +109,10 @@ public class CustomTwilioVideoViewManager extends SimpleViewManager<CustomTwilio
             case TOGGLE_VIDEO:
                 Boolean videoEnabled = args.getBoolean(0);
                 view.toggleVideo(videoEnabled);
+                break;
+            case TOGGLE_SCREEN_SHARE:
+                Boolean screenShareEnabled = args.getBoolean(0);
+                view.toggleScreenShare(screenShareEnabled);
                 break;
             case TOGGLE_SOUND:
                 Boolean audioEnabled = args.getBoolean(0);
@@ -195,6 +200,7 @@ public class CustomTwilioVideoViewManager extends SimpleViewManager<CustomTwilio
                 .put("disconnect", DISCONNECT)
                 .put("switchCamera", SWITCH_CAMERA)
                 .put("toggleVideo", TOGGLE_VIDEO)
+                .put("toggleScreenShare", TOGGLE_SCREEN_SHARE)
                 .put("toggleSound", TOGGLE_SOUND)
                 .put("getStats", GET_STATS)
                 .put("disableOpenSLES", DISABLE_OPENSL_ES)
