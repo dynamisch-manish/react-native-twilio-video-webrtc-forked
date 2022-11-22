@@ -208,6 +208,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
 
     private static CameraCapturer cameraCapturer;
     private static ScreenCapturer screenCapturer;
+    private ScreenCapturerManager screenCapturerManager;
     private LocalAudioTrack localAudioTrack;
     private AudioManager audioManager;
     private int previousAudioMode;
@@ -249,6 +250,9 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
         dataTrackMessageThread.start();
         dataTrackMessageThreadHandler = new Handler(dataTrackMessageThread.getLooper());
 
+        if (android.os.Build.VERSION.SDK_INT >= 29) {
+            screenCapturerManager = new ScreenCapturerManager(getContext());
+        }
     }
 
     // ===== SETUP =================================================================================
@@ -421,6 +425,10 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
         if (localVideoTrack != null) {
             localVideoTrack.release();
             localVideoTrack = null;
+        }
+
+        if (android.os.Build.VERSION.SDK_INT >= 29) {
+            screenCapturerManager.unbindService();
         }
 
         if (localAudioTrack != null) {
@@ -738,6 +746,9 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
 
     public void toggleScreenShare(boolean enabled) {
         if (enabled) {
+            if (android.os.Build.VERSION.SDK_INT >= 29) {
+                screenCapturerManager.startForeground();
+            }
             if(screenCapturer == null) {
                 Log.d("RNTwilioScreenShare", "Under screenCapturer null & enables true");
                 requestScreenCapturePermission();
@@ -747,6 +758,9 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
             }
         } else {
             Log.d("RNTwilioScreenShare", "Under screenCapturer null or true & enables false");
+            if (android.os.Build.VERSION.SDK_INT >= 29) {
+                screenCapturerManager.endForeground();
+            }
             stopScreenCapture();
         }
     }
