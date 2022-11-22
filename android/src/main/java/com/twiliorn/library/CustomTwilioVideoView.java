@@ -442,6 +442,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
         localVideoTrack = null;
         thumbnailVideoView = null;
         cameraCapturer = null;
+        screenCapturer = null;
     }
 
     // ====== CONNECTING ===========================================================================
@@ -674,6 +675,10 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
             cameraCapturer.stopCapture();
             cameraCapturer = null;
         }
+        if (screenCapturer != null) {
+            screenCapturer.stopCapture();
+            screenCapturer = null;
+        }
     }
 
     // ===== SEND STRING ON DATA TRACK ======================================================================
@@ -733,10 +738,18 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     }
 
     public void toggleScreenShare(boolean enabled) {
-        if (screenCapturer == null && enabled) {
-            Log.d("RNTwilioScreenShare", "Under screen share");
-            requestScreenCapturePermission();
-        }
+        if (enabled) {
+            if(screenCapturer == null) {
+                Log.d("RNTwilioScreenShare", "Under screenCapturer null & enables true");
+                requestScreenCapturePermission();
+            } else {
+                Log.d("RNTwilioScreenShare", "Under screenCapturer true & enables true");
+                startScreenCapture();
+            }
+        } else (
+            Log.d("RNTwilioScreenShare", "Under screenCapturer null/true & enables false");
+            stopScreenCapture();
+        )
     }
 
     private void requestScreenCapturePermission() {
@@ -758,7 +771,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
                         .show();
                 return;
             }
-            screenCapturer = new ScreenCapturer(this, resultCode, data, new CameraCapturer.Listener() {
+            screenCapturer = new ScreenCapturer(getContext(), resultCode, data, new ScreenCapturer.Listener() {
                 @Override
                 public void onFirstFrameAvailable() {
                     Log.d(TAG, "First frame from screen capturer available");
