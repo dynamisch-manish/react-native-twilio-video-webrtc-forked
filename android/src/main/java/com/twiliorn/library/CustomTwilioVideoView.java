@@ -746,10 +746,10 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
                 Log.d("RNTwilioScreenShare", "Under screenCapturer true & enables true");
                 startScreenCapture();
             }
-        } else (
-            Log.d("RNTwilioScreenShare", "Under screenCapturer null/true & enables false");
+        } else {
+            Log.d("RNTwilioScreenShare", "Under screenCapturer null or true & enables false");
             stopScreenCapture();
-        )
+        }
     }
 
     private void requestScreenCapturePermission() {
