@@ -751,8 +751,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
             }
             if(screenCapturer == null) {
                 Log.d("RNTwilioScreenShare", "Under screenCapturer null & enables true");
-                // MediaProjectionManager mediaProjectionManager = (MediaProjectionManager) getContext().getSystemService(Context.AUDIO_SERVICE);
-                AudioManager audioManager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+                MediaProjectionManager mediaProjectionManager = (MediaProjectionManager) getContext().getSystemService(MEDIA_PROJECTION_SERVICE);
 
                 // This initiates a prompt dialog for the user to confirm screen projection.
                 // startActivityForResult(mediaProjectionManager.createScreenCaptureIntent(), REQUEST_MEDIA_PROJECTION);
