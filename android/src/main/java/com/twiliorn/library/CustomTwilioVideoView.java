@@ -30,7 +30,6 @@ import android.os.HandlerThread;
 import android.util.Log;
 import android.view.View;
 import android.support.v7.app.AppCompatActivity;
-import android.widget.Toast;
 
 import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.WritableArray;
@@ -764,11 +763,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_MEDIA_PROJECTION) {
             if (resultCode != AppCompatActivity.RESULT_OK) {
-                Toast.makeText(
-                                CustomTwilioVideoView.this,
-                                "Screen capture permission not granted",
-                                Toast.LENGTH_LONG)
-                        .show();
+                Log.d(TAG, "Screen capture permission not granted");
                 return;
             }
             screenCapturer = new ScreenCapturer(getContext(), resultCode, data, new ScreenCapturer.Listener() {
@@ -781,11 +776,6 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
                 public void onScreenCaptureError(String errorDescription) {
                     Log.e(TAG, "Screen capturer error: " + errorDescription);
                     stopScreenCapture();
-                    Toast.makeText(
-                                    CustomTwilioVideoView.this,
-                                    "Screen capturer error occurred.",
-                                    Toast.LENGTH_LONG)
-                            .show();
                 }
             });
             startScreenCapture();
