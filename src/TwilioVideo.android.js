@@ -165,7 +165,8 @@ const nativeEvents = {
   toggleBluetoothHeadset: 11,
   sendString: 12,
   publishVideo: 13,
-  publishAudio: 14
+  publishAudio: 14,
+  toggleScreenShare: 15
 }
 
 class CustomTwilioVideoView extends Component {
@@ -231,6 +232,11 @@ class CustomTwilioVideoView extends Component {
 
   setLocalVideoEnabled (enabled) {
     this.runCommand(nativeEvents.toggleVideo, [enabled])
+    return Promise.resolve(enabled)
+  }
+
+  setScreenShareEnabled (enabled) {
+    this.runCommand(nativeEvents.toggleScreenShare, [enabled])
     return Promise.resolve(enabled)
   }
 

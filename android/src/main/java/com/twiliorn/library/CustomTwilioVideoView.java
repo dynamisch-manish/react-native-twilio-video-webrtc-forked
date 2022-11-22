@@ -20,6 +20,7 @@ import android.media.AudioAttributes;
 import android.media.AudioDeviceInfo;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
+import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import androidx.annotation.Nullable;
 import androidx.annotation.NonNull;
@@ -28,6 +29,8 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
 import android.view.View;
+import android.support.v7.app.AppCompatActivity;
+import android.widget.Toast;
 
 import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.WritableArray;
@@ -39,6 +42,7 @@ import com.facebook.react.uimanager.events.RCTEventEmitter;
 import com.twilio.video.AudioTrackPublication;
 import com.twilio.video.BaseTrackStats;
 import com.twilio.video.CameraCapturer;
+import com.twilio.video.ScreenCapturer;
 import com.twilio.video.ConnectOptions;
 import com.twilio.video.LocalAudioTrack;
 import com.twilio.video.LocalAudioTrackPublication;
@@ -118,9 +122,11 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     private static final String DATA_TRACK_MESSAGE_THREAD_NAME = "DataTrackMessages";
     private static final String FRONT_CAMERA_TYPE = "front";
     private static final String BACK_CAMERA_TYPE = "back";
+    private static final int REQUEST_MEDIA_PROJECTION = 100;
     private boolean enableRemoteAudio = false;
     private boolean enableNetworkQualityReporting = false;
     private boolean isVideoEnabled = false;
+    private boolean isScreenShareEnabled = false;
     private boolean dominantSpeakerEnabled = false;
     private static String frontFacingDevice;
     private static String backFacingDevice;
@@ -202,6 +208,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     private static LocalVideoTrack localVideoTrack;
 
     private static CameraCapturer cameraCapturer;
+    private static ScreenCapturer screenCapturer;
     private LocalAudioTrack localAudioTrack;
     private AudioManager audioManager;
     private int previousAudioMode;
@@ -721,6 +728,82 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
 
             WritableMap event = new WritableNativeMap();
             event.putBoolean("videoEnabled", enabled);
+            pushEvent(CustomTwilioVideoView.this, ON_VIDEO_CHANGED, event);
+        }
+    }
+
+    public void toggleScreenShare(boolean enabled) {
+        isScreenShareEnabled = enabled;
+
+        if (screenCapturer == null && enabled) {
+            Log.d("RNTwilioScreenShare", "Under screen share");
+            requestScreenCapturePermission();
+        }
+    }
+
+    private void requestScreenCapturePermission() {
+        Log.d(TAG, "Requesting permission to capture screen");
+        MediaProjectionManager mediaProjectionManager = (MediaProjectionManager) getContext().getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+
+        // This initiates a prompt dialog for the user to confirm screen projection.
+        startActivityForResult(mediaProjectionManager.createScreenCaptureIntent(), REQUEST_MEDIA_PROJECTION);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_MEDIA_PROJECTION) {
+            if (resultCode != AppCompatActivity.RESULT_OK) {
+                Toast.makeText(
+                                CustomTwilioVideoView.this,
+                                "Screen capture permission not granted",
+                                Toast.LENGTH_LONG)
+                        .show();
+                return;
+            }
+            screenCapturer = new ScreenCapturer(this, resultCode, data, new CameraCapturer.Listener() {
+                @Override
+                public void onFirstFrameAvailable() {
+                    Log.d(TAG, "First frame from screen capturer available");
+                }
+                
+                @Override
+                public void onScreenCaptureError(String errorDescription) {
+                    Log.e(TAG, "Screen capturer error: " + errorDescription);
+                    stopScreenCapture();
+                    Toast.makeText(
+                                    CustomTwilioVideoView.this,
+                                    "Screen capturer error occurred.",
+                                    Toast.LENGTH_LONG)
+                            .show();
+                }
+            });
+            startScreenCapture();
+        }
+    }
+
+    private void startScreenCapture() {
+        localVideoTrack = LocalVideoTrack.create(getContext(), true, screenCapturer, buildVideoFormat());
+        if (thumbnailVideoView != null && localVideoTrack != null) {
+            localVideoTrack.addSink(thumbnailVideoView);
+        }
+
+        if (localVideoTrack != null) {
+            localVideoTrack.enable(true);
+            publishLocalVideo(true);
+
+            WritableMap event = new WritableNativeMap();
+            event.putBoolean("screenShareEnabled", true);
+            pushEvent(CustomTwilioVideoView.this, ON_VIDEO_CHANGED, event);
+        }
+    }
+
+    private void stopScreenCapture() {
+        if (localVideoTrack != null) {
+            localVideoTrack.enable(false);
+            publishLocalVideo(false);
+
+            WritableMap event = new WritableNativeMap();
+            event.putBoolean("screenShareEnabled", false);
             pushEvent(CustomTwilioVideoView.this, ON_VIDEO_CHANGED, event);
         }
     }
