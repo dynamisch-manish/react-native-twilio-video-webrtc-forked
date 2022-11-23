@@ -235,10 +235,10 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     private final ActivityEventListener activityEventListener = new BaseActivityEventListener() {
         @Override
         public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent data) {
-            Log.d("RNTwilioScreenShare", "Got activity result" + REQUEST_MEDIA_PROJECTION);
+            Log.d("RNTwilioScreenShare", "Got activity result " + requestCode + " " + resultCode);
             super.onActivityResult(activity, requestCode, resultCode, data);
             if (requestCode == REQUEST_MEDIA_PROJECTION) {
-                Log.d("RNTwilioScreenShare", "Request code is" + REQUEST_MEDIA_PROJECTION);
+                Log.d("RNTwilioScreenShare", "Request for the screen capture permission");
                 if (resultCode != Activity.RESULT_OK) {
                     Log.d("RNTwilioScreenShare", "Screen capture permission not granted");
                     return;
@@ -395,8 +395,12 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
             /*
              * If the local video track was released when the app was put in the background, recreate.
              */
-            if (cameraCapturer != null && localVideoTrack == null) {
-                localVideoTrack = LocalVideoTrack.create(getContext(), isVideoEnabled, cameraCapturer, buildVideoFormat());
+            if (localVideoTrack == null) {
+                if(screenCapturer != null) {
+                    localVideoTrack = LocalVideoTrack.create(getContext(), isScreenShareEnabled, screenCapturer);
+                } else if(cameraCapturer != null) {
+                    localVideoTrack = LocalVideoTrack.create(getContext(), isVideoEnabled, cameraCapturer, buildVideoFormat());
+                }
             }
 
             if (localVideoTrack != null) {
@@ -762,6 +766,12 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     }
 
     public void toggleVideo(boolean enabled) {
+        if(isScreenShareEnabled) {
+            screenCapturer.stopCapture();
+            screenCapturer = null;
+            isScreenShareEnabled = false;
+        }
+
         isVideoEnabled = enabled;
 
         if (cameraCapturer == null && enabled) {
@@ -821,9 +831,14 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     }
 
     private void startScreenCapture() {
+        if(isVideoEnabled){
+            cameraCapturer.stopCapture();
+            cameraCapturer = null;
+        }
+
         isScreenShareEnabled = true;
 
-        localVideoTrack = LocalVideoTrack.create(getContext(), true, screenCapturer, buildVideoFormat());
+        localVideoTrack = LocalVideoTrack.create(getContext(), true, screenCapturer);
         if (thumbnailVideoView != null && localVideoTrack != null) {
             localVideoTrack.addSink(thumbnailVideoView);
         }
@@ -848,6 +863,10 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
             WritableMap event = new WritableNativeMap();
             event.putBoolean("screenShareEnabled", false);
             pushEvent(CustomTwilioVideoView.this, ON_VIDEO_CHANGED, event);
+        }
+
+        if(isVideoEnabled){
+            toggleVideo(true);
         }
     }
 
@@ -1279,8 +1298,9 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
             }
 
             @Override
-            public void onAudioTrackEnabled(RemoteParticipant participant, RemoteAudioTrackPublication publication) {//                Log.i(TAG, "onAudioTrackEnabled");
-//                publication.getRemoteAudioTrack().enablePlayback(false);
+            public void onAudioTrackEnabled(RemoteParticipant participant, RemoteAudioTrackPublication publication) {
+                // Log.i(TAG, "onAudioTrackEnabled");
+                // publication.getRemoteAudioTrack().enablePlayback(false);
                 WritableMap event = buildParticipantVideoEvent(participant, publication);
                 pushEvent(CustomTwilioVideoView.this, ON_PARTICIPANT_ENABLED_AUDIO_TRACK, event);
             }
