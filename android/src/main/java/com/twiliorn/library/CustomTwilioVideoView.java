@@ -766,15 +766,17 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     }
 
     public void toggleVideo(boolean enabled) {
-        if(screenCapturer != null && enabled) {
-            Log.d(TAG, "============= Under toggle video =============");
-            Log.d(TAG, "screenCapturer is not null & enabled true");
-            Log.d(TAG, "============= Under toggle video =============");
-            screenCapturer.stopCapture();
-            screenCapturer = null;
-            isScreenShareEnabled = false;
+        if(enabled && screenCapturer != null && localVideoTrack != null) {
             localVideoTrack.enable(false);
             publishLocalVideo(false);
+
+            localVideoTrack.release();
+            localVideoTrack = null;
+            screenCapturer = null;
+
+            WritableMap event = new WritableNativeMap();
+            event.putBoolean("videoEnabled", false);
+            pushEvent(CustomTwilioVideoView.this, ON_VIDEO_CHANGED, event);
         }
 
         isVideoEnabled = enabled;
@@ -789,11 +791,14 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
         }
 
         if (cameraCapturer != null && localVideoTrack != null) {
-            Log.d(TAG, "============= Under toggle video =============");
-            Log.d(TAG, "cameraCapturer & localVideoTrack is not null");
-            Log.d(TAG, "============= Under toggle video =============");
             localVideoTrack.enable(enabled);
             publishLocalVideo(enabled);
+
+            if(!enabled) {
+                localVideoTrack.release();
+                localVideoTrack = null;
+                cameraCapturer = null;
+            }
 
             WritableMap event = new WritableNativeMap();
             event.putBoolean("videoEnabled", enabled);
@@ -807,17 +812,15 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
                 screenCapturerManager.startForeground();
             }
             if(screenCapturer == null) {
-                Log.d("RNTwilioScreenShare", "Under screenCapturer null & enables true");
                 // This initiates a prompt dialog for the user to confirm screen projection.
 
                 if (mediaProjectionManager != null) {
-                    Log.d("RNTwilioScreenShare", "mediaProjectionManager is available");
-
                     Activity currentActivity = this.themedReactContext.getCurrentActivity();
 
                     UiThreadUtil.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
+                            assert currentActivity != null;
                             currentActivity.startActivityForResult(
                                 mediaProjectionManager.createScreenCaptureIntent(), REQUEST_MEDIA_PROJECTION);
                         }
@@ -826,11 +829,9 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
                     Log.d("RNTwilioScreenShare", "mediaProjectionManager is null");
                 }
             } else {
-                Log.d("RNTwilioScreenShare", "Under screenCapturer true & enables true");
                 startScreenCapture();
             }
         } else {
-            Log.d("RNTwilioScreenShare", "Under screenCapturer null or true & enables false");
             if (android.os.Build.VERSION.SDK_INT >= 29) {
                 screenCapturerManager.endForeground();
             }
@@ -839,34 +840,33 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
     }
 
     private void startScreenCapture() {
-        if(cameraCapturer != null){
-            Log.d(TAG, "============= Under toggle video =============");
-            Log.d(TAG, "cameraCapturer is not null & enabled true");
-            Log.d(TAG, "============= Under toggle video =============");
-            cameraCapturer.stopCapture();
-            cameraCapturer = null;
-            isVideoEnabled = false;
+        if(cameraCapturer != null && localVideoTrack != null){
             localVideoTrack.enable(false);
             publishLocalVideo(false);
+
+            localVideoTrack.release();
+            localVideoTrack = null;
+            cameraCapturer = null;
+
+            WritableMap event = new WritableNativeMap();
+            event.putBoolean("videoEnabled", false);
+            pushEvent(CustomTwilioVideoView.this, ON_VIDEO_CHANGED, event);
         }
 
         isScreenShareEnabled = true;
 
         localVideoTrack = LocalVideoTrack.create(getContext(), true, screenCapturer);
+
         if (thumbnailVideoView != null && localVideoTrack != null) {
             localVideoTrack.addSink(thumbnailVideoView);
         }
-//        setThumbnailMirror();
 
         if (screenCapturer != null && localVideoTrack != null) {
-            Log.d(TAG, "============= Under start screen capture =============");
-            Log.d(TAG, "screenCapturer & localVideoTrack is not null");
-            Log.d(TAG, "============= Under start screen capture =============");
             localVideoTrack.enable(true);
             publishLocalVideo(true);
 
             WritableMap event = new WritableNativeMap();
-            event.putBoolean("screenShareEnabled", true);
+            event.putBoolean("videoEnabled", true);
             pushEvent(CustomTwilioVideoView.this, ON_VIDEO_CHANGED, event);
         }
     }
@@ -875,14 +875,15 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
         isScreenShareEnabled = false;
 
         if (screenCapturer != null && localVideoTrack != null) {
-            Log.d(TAG, "============= Under stop screen capture =============");
-            Log.d(TAG, "screenCapturer & localVideoTrack is not null");
-            Log.d(TAG, "============= Under stop screen capture =============");
             localVideoTrack.enable(false);
             publishLocalVideo(false);
 
+            localVideoTrack.release();
+            localVideoTrack = null;
+            screenCapturer = null;
+
             WritableMap event = new WritableNativeMap();
-            event.putBoolean("screenShareEnabled", false);
+            event.putBoolean("videoEnabled", false);
             pushEvent(CustomTwilioVideoView.this, ON_VIDEO_CHANGED, event);
         }
     }
