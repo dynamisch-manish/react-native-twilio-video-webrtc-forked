@@ -119,7 +119,7 @@ import static com.twiliorn.library.CustomTwilioVideoView.Events.ON_STATS_RECEIVE
 import static com.twiliorn.library.CustomTwilioVideoView.Events.ON_VIDEO_CHANGED;
 import static com.twiliorn.library.CustomTwilioVideoView.Events.ON_DOMINANT_SPEAKER_CHANGED;
 import static com.twiliorn.library.CustomTwilioVideoView.Events.ON_LOCAL_PARTICIPANT_SUPPORTED_CODECS;
-import static com.twiliorn.library.CustomTwilioVideoView.Events.ON_SCREEN_SHARE_PERMISSION_CANCELLED;
+import static com.twiliorn.library.CustomTwilioVideoView.Events.ON_SCREEN_SHARE_CHANGED;
 
 public class CustomTwilioVideoView extends View implements LifecycleEventListener, AudioManager.OnAudioFocusChangeListener {
     private static final String TAG = "CustomTwilioVideoView";
@@ -162,7 +162,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
             Events.ON_NETWORK_QUALITY_LEVELS_CHANGED,
             Events.ON_DOMINANT_SPEAKER_CHANGED,
             Events.ON_LOCAL_PARTICIPANT_SUPPORTED_CODECS,
-            Events.ON_SCREEN_SHARE_PERMISSION_CANCELLED,
+            Events.ON_SCREEN_SHARE_CHANGED,
     })
     public @interface Events {
         String ON_CAMERA_SWITCHED = "onCameraSwitched";
@@ -188,7 +188,7 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
         String ON_NETWORK_QUALITY_LEVELS_CHANGED = "onNetworkQualityLevelsChanged";
         String ON_DOMINANT_SPEAKER_CHANGED = "onDominantSpeakerDidChange";
         String ON_LOCAL_PARTICIPANT_SUPPORTED_CODECS = "onLocalParticipantSupportedCodecs";
-        String ON_SCREEN_SHARE_PERMISSION_CANCELLED = "onScreenSharePermissionCancelled";
+        String ON_SCREEN_SHARE_CHANGED = "onScreenShareChanged";
     }
 
     private final ThemedReactContext themedReactContext;
@@ -244,27 +244,21 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
                 Log.d("RNTwilioScreenShare", "Request for the screen capture permission");
                 if (resultCode != Activity.RESULT_OK) {
                     Log.d("RNTwilioScreenShare", "Screen capture permission not granted");
-                    WritableMap event = new WritableNativeMap();
-                    event.putString("cancel", "Screen capture permission not granted");
-                    pushEvent(CustomTwilioVideoView.this, ON_SCREEN_SHARE_PERMISSION_CANCELLED, event);
-                    return;
-                }
-                screenCapturer = new ScreenCapturer(themedReactContext, resultCode, data, new ScreenCapturer.Listener() {
-                    @Override
-                    public void onFirstFrameAvailable() {
-                        Log.d("RNTwilioScreenShare", "First frame from screen capturer available");
-                    }
+                } else {
+                    screenCapturer = new ScreenCapturer(themedReactContext, resultCode, data, new ScreenCapturer.Listener() {
+                        @Override
+                        public void onFirstFrameAvailable() {
+                            Log.d("RNTwilioScreenShare", "First frame from screen capturer available");
+                        }
 
-                    @Override
-                    public void onScreenCaptureError(String errorDescription) {
-                        Log.e("RNTwilioScreenShare", "Screen capturer error: " + errorDescription);
-                        WritableMap event = new WritableNativeMap();
-                        event.putString("error", "Screen capturer error: " + errorDescription);
-                        pushEvent(CustomTwilioVideoView.this, ON_SCREEN_SHARE_PERMISSION_CANCELLED, event);
-                        stopScreenCapture();
-                    }
-                });
-                startScreenCapture();
+                        @Override
+                        public void onScreenCaptureError(String errorDescription) {
+                            Log.e("RNTwilioScreenShare", "Screen capturer error: " + errorDescription);
+                            stopScreenCapture();
+                        }
+                    });
+                    startScreenCapture();
+                }
             }
         }
     };
@@ -784,8 +778,8 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
             screenCapturer = null;
 
             WritableMap event = new WritableNativeMap();
-            event.putBoolean("videoEnabled", false);
-            pushEvent(CustomTwilioVideoView.this, ON_VIDEO_CHANGED, event);
+            event.putBoolean("screenShareEnabled", false);
+            pushEvent(CustomTwilioVideoView.this, ON_SCREEN_SHARE_CHANGED, event);
         }
 
         isVideoEnabled = enabled;
@@ -836,9 +830,6 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
                     });
                 } else {
                     Log.d("RNTwilioScreenShare", "mediaProjectionManager is null");
-                    WritableMap event = new WritableNativeMap();
-                    event.putString("error", "MediaProjectionManager is null");
-                    pushEvent(CustomTwilioVideoView.this, ON_SCREEN_SHARE_PERMISSION_CANCELLED, event);
                 }
             } else {
                 startScreenCapture();
@@ -878,8 +869,8 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
             publishLocalVideo(true);
 
             WritableMap event = new WritableNativeMap();
-            event.putBoolean("videoEnabled", true);
-            pushEvent(CustomTwilioVideoView.this, ON_VIDEO_CHANGED, event);
+            event.putBoolean("screenShareEnabled", true);
+            pushEvent(CustomTwilioVideoView.this, ON_SCREEN_SHARE_CHANGED, event);
         }
     }
 
@@ -895,8 +886,8 @@ public class CustomTwilioVideoView extends View implements LifecycleEventListene
             screenCapturer = null;
 
             WritableMap event = new WritableNativeMap();
-            event.putBoolean("videoEnabled", false);
-            pushEvent(CustomTwilioVideoView.this, ON_VIDEO_CHANGED, event);
+            event.putBoolean("screenShareEnabled", false);
+            pushEvent(CustomTwilioVideoView.this, ON_SCREEN_SHARE_CHANGED, event);
         }
     }
 

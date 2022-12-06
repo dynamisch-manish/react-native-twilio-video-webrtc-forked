@@ -31,6 +31,11 @@ const propTypes = {
   onVideoChanged: PropTypes.func,
 
   /**
+     * Callback that is called when screen share permission received.
+     */
+  onScreenShareChanged: PropTypes.func,
+
+  /**
      * Callback that is called when a audio is toggled.
      */
   onAudioChanged: PropTypes.func,
@@ -148,11 +153,7 @@ const propTypes = {
   /**
      * Callback that is called after determining what codecs are supported
      */
-  onLocalParticipantSupportedCodecs: PropTypes.func,
-  /**
-     * Callback that is called when user is cancel screen share permission
-     */
-  onScreenSharePermissionCancelled: PropTypes.func
+  onLocalParticipantSupportedCodecs: PropTypes.func
 }
 
 const nativeEvents = {
@@ -241,7 +242,6 @@ class CustomTwilioVideoView extends Component {
 
   setScreenShareEnabled (enabled) {
     this.runCommand(nativeEvents.toggleScreenShare, [enabled])
-    return Promise.resolve(enabled)
   }
 
   setLocalAudioEnabled (enabled) {
@@ -289,6 +289,7 @@ class CustomTwilioVideoView extends Component {
     return [
       'onCameraSwitched',
       'onVideoChanged',
+      'onScreenShareChanged',
       'onAudioChanged',
       'onRoomDidConnect',
       'onRoomDidFailToConnect',
@@ -309,8 +310,7 @@ class CustomTwilioVideoView extends Component {
       'onStatsReceived',
       'onNetworkQualityLevelsChanged',
       'onDominantSpeakerDidChange',
-      'onLocalParticipantSupportedCodecs',
-      'onScreenSharePermissionCancelled'
+      'onLocalParticipantSupportedCodecs'
     ].reduce((wrappedEvents, eventName) => {
       if (this.props[eventName]) {
         return {
