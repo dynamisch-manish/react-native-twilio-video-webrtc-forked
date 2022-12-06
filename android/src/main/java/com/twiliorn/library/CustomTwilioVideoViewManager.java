@@ -158,7 +158,6 @@ public class CustomTwilioVideoViewManager extends SimpleViewManager<CustomTwilio
         Map<String, Map<String, String>> map = MapBuilder.of(
                 ON_CAMERA_SWITCHED, MapBuilder.of("registrationName", ON_CAMERA_SWITCHED),
                 ON_VIDEO_CHANGED, MapBuilder.of("registrationName", ON_VIDEO_CHANGED),
-                ON_SCREEN_SHARE_CHANGED, MapBuilder.of("registrationName", ON_SCREEN_SHARE_CHANGED),
                 ON_AUDIO_CHANGED, MapBuilder.of("registrationName", ON_AUDIO_CHANGED),
                 ON_CONNECTED, MapBuilder.of("registrationName", ON_CONNECTED),
                 ON_CONNECT_FAILURE, MapBuilder.of("registrationName", ON_CONNECT_FAILURE),
@@ -178,7 +177,8 @@ public class CustomTwilioVideoViewManager extends SimpleViewManager<CustomTwilio
 
         map.putAll(MapBuilder.of(
                 ON_PARTICIPANT_REMOVED_DATA_TRACK, MapBuilder.of("registrationName", ON_PARTICIPANT_REMOVED_DATA_TRACK),
-                ON_LOCAL_PARTICIPANT_SUPPORTED_CODECS, MapBuilder.of("registrationName", ON_LOCAL_PARTICIPANT_SUPPORTED_CODECS)
+                ON_LOCAL_PARTICIPANT_SUPPORTED_CODECS, MapBuilder.of("registrationName", ON_LOCAL_PARTICIPANT_SUPPORTED_CODECS),
+                ON_SCREEN_SHARE_CHANGED, MapBuilder.of("registrationName", ON_SCREEN_SHARE_CHANGED)
         ));
 
         map.putAll(MapBuilder.of(
