@@ -288,7 +288,7 @@ RCT_EXPORT_METHOD(flipCamera) {
   }
 }
 
-RCT_EXPORT_METHOD(toggleScreenSharing: (BOOL) value) {
+RCT_EXPORT_METHOD(toggleScreenShare: (BOOL) value) {
     if (value) {
        TVIAppScreenSourceOptions *options = [TVIAppScreenSourceOptions optionsWithBlock:^(TVIAppScreenSourceOptionsBuilder * _Nonnull builder) {
 
