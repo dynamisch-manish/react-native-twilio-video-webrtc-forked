@@ -10,6 +10,7 @@
 
 #import "RCTTWSerializable.h"
 
+static NSString* screenShareChanged           = @"screenShareChanged";
 static NSString* roomDidConnect               = @"roomDidConnect";
 static NSString* roomDidDisconnect            = @"roomDidDisconnect";
 static NSString* roomDidFailToConnect         = @"roomDidFailToConnect";
@@ -90,6 +91,7 @@ RCT_EXPORT_MODULE();
 
 - (NSArray<NSString *> *)supportedEvents {
   return @[
+    screenShareChanged,
     roomDidConnect,
     roomDidDisconnect,
     roomDidFailToConnect,
@@ -288,8 +290,8 @@ RCT_EXPORT_METHOD(flipCamera) {
   }
 }
 
-RCT_EXPORT_METHOD(toggleScreenShare: (BOOL) value) {
-    if (value) {
+RCT_EXPORT_METHOD(toggleScreenShare:(BOOL)enabled) {
+    if (enabled) {
        TVIAppScreenSourceOptions *options = [TVIAppScreenSourceOptions optionsWithBlock:^(TVIAppScreenSourceOptionsBuilder * _Nonnull builder) {
 
        }];
