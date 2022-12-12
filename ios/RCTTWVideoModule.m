@@ -252,7 +252,7 @@ RCT_REMAP_METHOD(setLocalAudioEnabled, enabled:(BOOL)enabled setLocalAudioEnable
 
 - (bool)_setLocalVideoEnabled:(bool)enabled cameraType:(NSString *)cameraType {
   if(self.screen != nil && self.localVideoTrack != nil) {
-    [self.localVideoTrack setEnabled:enabled];
+    [self.localVideoTrack setEnabled:false];
     TVILocalParticipant *localParticipant = self.room.localParticipant;
     [localParticipant unpublishVideoTrack:self.localVideoTrack];
 
@@ -323,7 +323,7 @@ RCT_EXPORT_METHOD(flipCamera) {
 RCT_EXPORT_METHOD(toggleScreenShare:(BOOL)enabled) {
   if (enabled) {
     if(self.camera != nil && self.localVideoTrack != nil) {
-      [self.localVideoTrack setEnabled:enabled];
+      [self.localVideoTrack setEnabled:false];
       TVILocalParticipant *localParticipant = self.room.localParticipant;
       [localParticipant unpublishVideoTrack:self.localVideoTrack];
 
