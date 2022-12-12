@@ -251,16 +251,46 @@ RCT_REMAP_METHOD(setLocalAudioEnabled, enabled:(BOOL)enabled setLocalAudioEnable
 }
 
 - (bool)_setLocalVideoEnabled:(bool)enabled cameraType:(NSString *)cameraType {
-  if (self.localVideoTrack != nil) {
+  if(self.screen != nil && self.localVideoTrack != nil) {
+    [self.localVideoTrack setEnabled:enabled];
+    TVILocalParticipant *localParticipant = self.room.localParticipant;
+    [localParticipant unpublishVideoTrack:self.localVideoTrack];
+
+    [self.screen stopCapture];
+    self.localVideoTrack = nil;
+    self.screen = nil;
+
+    [self sendEventCheckingListenerWithName:screenShareChanged body:@{ @"screenShareEnabled": [NSNumber numberWithBool:false] }];
+  }
+
+  if(enabled && self.camera == nil) {
+    TVICameraSourceOptions *options = [TVICameraSourceOptions optionsWithBlock:^(TVICameraSourceOptionsBuilder * _Nonnull builder) {
+
+    }];
+    self.camera = [[TVICameraSource alloc] initWithOptions:options delegate:self];
+    if (self.camera == nil) {
+      return;
+    }
+    self.localVideoTrack = [TVILocalVideoTrack trackWithSource:self.camera enabled:NO name:@"camera"];
+  }
+
+  if (self.camera != nil && self.localVideoTrack != nil) {
+    if (enabled) {
       [self.localVideoTrack setEnabled:enabled];
-      if (self.camera) {
-          if (enabled) {
-            [self startCameraCapture:cameraType];
-          } else {
-            [self clearCameraInstance];
-          }
-          return enabled;
-      }
+      TVILocalParticipant *localParticipant = self.room.localParticipant;
+      [localParticipant publishVideoTrack:self.localVideoTrack];
+
+      [self startCameraCapture:cameraType];
+    } else {
+      [self.localVideoTrack setEnabled:enabled];
+      TVILocalParticipant *localParticipant = self.room.localParticipant;
+      [localParticipant unpublishVideoTrack:self.localVideoTrack];
+
+      [self.camera stopCapture];
+      self.localVideoTrack = nil;
+      self.camera = nil;
+    }
+    return enabled;
   }
   return false;
 }
@@ -291,25 +321,50 @@ RCT_EXPORT_METHOD(flipCamera) {
 }
 
 RCT_EXPORT_METHOD(toggleScreenShare:(BOOL)enabled) {
-    if (enabled) {
-       TVIAppScreenSourceOptions *options = [TVIAppScreenSourceOptions optionsWithBlock:^(TVIAppScreenSourceOptionsBuilder * _Nonnull builder) {
+  if (enabled) {
+    if(self.camera != nil && self.localVideoTrack != nil) {
+      [self.localVideoTrack setEnabled:enabled];
+      TVILocalParticipant *localParticipant = self.room.localParticipant;
+      [localParticipant unpublishVideoTrack:self.localVideoTrack];
 
-       }];
-       self.screen = [[TVIAppScreenSource alloc] initWithOptions:options delegate:self];
-       if (self.screen == nil) {
-           return;
-       }
-       self.localVideoTrack = [TVILocalVideoTrack trackWithSource:self.screen enabled:YES name:@"screen"];
-       if(self.localVideoTrack != nil){
-         TVILocalParticipant *localParticipant = self.room.localParticipant;
-         [localParticipant publishVideoTrack:self.localVideoTrack];
-       }
-       [self.screen startCapture];    
+      [self.camera stopCapture];
+      self.localVideoTrack = nil;
+      self.camera = nil;
+    }
+
+    if(self.screen == nil) {
+      TVIAppScreenSourceOptions *options = [TVIAppScreenSourceOptions optionsWithBlock:^(TVIAppScreenSourceOptionsBuilder * _Nonnull builder) {
+
+      }];
+      self.screen = [[TVIAppScreenSource alloc] initWithOptions:options delegate:self];
+      if (self.screen == nil) {
+        return;
+      }
+      self.localVideoTrack = [TVILocalVideoTrack trackWithSource:self.screen enabled:NO name:@"screen"];
+    }
+
+    if(self.screen != nil && self.localVideoTrack != nil){
+      [self.localVideoTrack setEnabled:enabled];
+      TVILocalParticipant *localParticipant = self.room.localParticipant;
+      [localParticipant publishVideoTrack:self.localVideoTrack];
+
+      [self.screen startCapture];
+
+      [self sendEventCheckingListenerWithName:screenShareChanged body:@{ @"screenShareEnabled": [NSNumber numberWithBool:true] }];
+    }
   } else {
-        [self unpublishLocalVideo];
-        [self.screen stopCapture];
-        self.localVideoTrack = nil;
-       }
+    if(self.screen != nil && self.localVideoTrack != nil) {
+      [self.localVideoTrack setEnabled:enabled];
+      TVILocalParticipant *localParticipant = self.room.localParticipant;
+      [localParticipant unpublishVideoTrack:self.localVideoTrack];
+
+      [self.screen stopCapture];
+      self.localVideoTrack = nil;
+      self.screen = nil;
+
+      [self sendEventCheckingListenerWithName:screenShareChanged body:@{ @"screenShareEnabled": [NSNumber numberWithBool:false] }];
+    }
+  }
 }
 
 
