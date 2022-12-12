@@ -268,9 +268,9 @@ RCT_REMAP_METHOD(setLocalAudioEnabled, enabled:(BOOL)enabled setLocalAudioEnable
 
     }];
     self.camera = [[TVICameraSource alloc] initWithOptions:options delegate:self];
-    if (self.camera == nil) {
-      return;
-    }
+    // if (self.camera == nil) {
+    //   return;
+    // }
     self.localVideoTrack = [TVILocalVideoTrack trackWithSource:self.camera enabled:NO name:@"camera"];
   }
 
