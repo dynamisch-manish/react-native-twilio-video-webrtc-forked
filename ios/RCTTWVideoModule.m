@@ -83,6 +83,7 @@ RCT_EXPORT_MODULE();
 
 - (void)dealloc {
   [self clearCameraInstance];
+  [self clearScreenInstance];
 }
 
 - (dispatch_queue_t)methodQueue {
@@ -251,8 +252,8 @@ RCT_REMAP_METHOD(setLocalAudioEnabled, enabled:(BOOL)enabled setLocalAudioEnable
 }
 
 - (bool)_setLocalVideoEnabled:(bool)enabled cameraType:(NSString *)cameraType {
-  if(self.screen != nil && self.localVideoTrack != nil) {
-    [self.localVideoTrack setEnabled:false];
+  if(enabled && self.screen != nil && self.localVideoTrack != nil) {
+    [self.localVideoTrack setEnabled:!enabled];
     TVILocalParticipant *localParticipant = self.room.localParticipant;
     [localParticipant unpublishVideoTrack:self.localVideoTrack];
 
@@ -323,7 +324,7 @@ RCT_EXPORT_METHOD(flipCamera) {
 RCT_EXPORT_METHOD(toggleScreenShare:(BOOL)enabled) {
   if (enabled) {
     if(self.camera != nil && self.localVideoTrack != nil) {
-      [self.localVideoTrack setEnabled:false];
+      [self.localVideoTrack setEnabled:!enabled];
       TVILocalParticipant *localParticipant = self.room.localParticipant;
       [localParticipant unpublishVideoTrack:self.localVideoTrack];
 
@@ -349,6 +350,10 @@ RCT_EXPORT_METHOD(toggleScreenShare:(BOOL)enabled) {
       [localParticipant publishVideoTrack:self.localVideoTrack];
 
       [self.screen startCapture];
+
+      for (TVIVideoView *renderer in self.localVideoTrack.renderers) {
+        [self.localVideoTrack addRenderer:renderer];
+      }
 
       [self sendEventCheckingListenerWithName:screenShareChanged body:@{ @"screenShareEnabled": [NSNumber numberWithBool:true] }];
     }
@@ -531,6 +536,7 @@ RCT_EXPORT_METHOD(sendString:(nonnull NSString *)message) {
 
 RCT_EXPORT_METHOD(disconnect) {
   [self clearCameraInstance];
+  [self clearScreenInstance];
   [self.room disconnect];
 }
 
@@ -538,6 +544,15 @@ RCT_EXPORT_METHOD(disconnect) {
     // We are done with camera
     if (self.camera) {
         [self.camera stopCapture];
+        self.camera = nil;
+    }
+}
+
+- (void)clearScreenInstance {
+    // We are done with camera
+    if (self.screen) {
+        [self.screen stopCapture];
+        self.screen = nil;
     }
 }
 
