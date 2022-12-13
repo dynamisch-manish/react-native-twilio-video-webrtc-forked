@@ -197,6 +197,7 @@ RCT_EXPORT_METHOD(startLocalVideo) {
           for (TVIVideoView *renderer in self.localVideoTrack.renderers) {
             [self updateLocalViewMirroring:renderer];
           }
+          NSLog(@"NSLog -------- Camera enabled -------- ");
           [self sendEventCheckingListenerWithName:cameraDidStart body:nil];
       }
   }];
@@ -257,11 +258,15 @@ RCT_REMAP_METHOD(setLocalAudioEnabled, enabled:(BOOL)enabled setLocalAudioEnable
     TVILocalParticipant *localParticipant = self.room.localParticipant;
     [localParticipant unpublishVideoTrack:self.localVideoTrack];
 
-    [self.screen stopCapture];
+    [self.screen stopCaptureWithCompletion:^(NSError * _Nullable error) {
+        if(!error) {
+            NSLog(@"NSLog -------- Screen share disabled -------- ");
+            [self sendEventCheckingListenerWithName:screenShareChanged body:@{ @"screenShareEnabled": [NSNumber numberWithBool:false] }];
+        }
+    }];
+    
     self.localVideoTrack = nil;
     self.screen = nil;
-
-    [self sendEventCheckingListenerWithName:screenShareChanged body:@{ @"screenShareEnabled": [NSNumber numberWithBool:false] }];
   }
 
   if(enabled && self.camera == nil) {
@@ -328,7 +333,13 @@ RCT_EXPORT_METHOD(toggleScreenShare:(BOOL)enabled) {
       TVILocalParticipant *localParticipant = self.room.localParticipant;
       [localParticipant unpublishVideoTrack:self.localVideoTrack];
 
-      [self.camera stopCapture];
+      [self.camera stopCaptureWithCompletion:^(NSError * _Nullable error) {
+          if(!error) {
+              NSLog(@"NSLog -------- Camera disabled -------- ");
+              [self sendEventCheckingListenerWithName:cameraDidStopRunning body:nil];
+          }
+      }];
+      
       self.localVideoTrack = nil;
       self.camera = nil;
     }
@@ -349,13 +360,12 @@ RCT_EXPORT_METHOD(toggleScreenShare:(BOOL)enabled) {
       TVILocalParticipant *localParticipant = self.room.localParticipant;
       [localParticipant publishVideoTrack:self.localVideoTrack];
 
-      [self.screen startCapture];
-
-      for (TVIVideoView *renderer in self.localVideoTrack.renderers) {
-        [self.localVideoTrack addRenderer:renderer];
-      }
-
-      [self sendEventCheckingListenerWithName:screenShareChanged body:@{ @"screenShareEnabled": [NSNumber numberWithBool:true] }];
+      [self.screen startCaptureWithCompletion:^(NSError * _Nullable error) {
+        if (!error) {
+          NSLog(@"NSLog -------- Screen share enabled -------- ");
+          [self sendEventCheckingListenerWithName:screenShareChanged body:@{ @"screenShareEnabled": [NSNumber numberWithBool:true] }];
+        }
+      }];
     }
   } else {
     if(self.screen != nil && self.localVideoTrack != nil) {
